@@ -8,6 +8,8 @@ import {
     Menu,
     X,
     Search,
+    Home,
+    Store,
 } from 'lucide-vue-next';
 
 const isScrolled = ref(false);
@@ -41,19 +43,19 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
         ]"
     >
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 items-center justify-between lg:h-18">
+            <div class="flex h-14 items-center justify-between sm:h-16 lg:h-18">
                 <!-- Logo -->
-                <Link href="/" class="flex shrink-0 items-center gap-2">
+                <Link href="/" class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                     <div
-                        class="flex size-9 items-center justify-center rounded-lg bg-primary"
+                        class="flex size-8 items-center justify-center rounded-lg bg-primary sm:size-9"
                     >
                         <span
-                            class="text-sm font-bold tracking-tight text-primary-foreground"
+                            class="text-xs font-bold tracking-tight text-primary-foreground sm:text-sm"
                             >SE</span
                         >
                     </div>
                     <span
-                        class="text-xl font-bold tracking-tight text-foreground"
+                        class="text-lg font-bold tracking-tight text-foreground sm:text-xl"
                     >
                         Shop<span class="text-primary">Ease</span>
                     </span>
@@ -106,7 +108,10 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
                 </div>
 
                 <!-- Mobile Actions -->
-                <div class="flex items-center gap-2 lg:hidden">
+                <div class="flex items-center gap-1 lg:hidden">
+                    <Button variant="ghost" size="icon-sm" aria-label="Search">
+                        <Search class="size-5" />
+                    </Button>
                     <Link href="/checkout" class="relative">
                         <Button variant="ghost" size="icon-sm" aria-label="Cart">
                             <ShoppingCart class="size-5" />
@@ -130,7 +135,23 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
             </div>
         </div>
 
-        <!-- Mobile Menu -->
+        <!-- Mobile Menu Overlay -->
+        <Transition
+            enter-active-class="transition-opacity duration-300"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition-opacity duration-200"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div
+                v-if="isMobileMenuOpen"
+                class="fixed inset-0 top-14 z-40 bg-black/20 backdrop-blur-sm sm:top-16 lg:hidden"
+                @click="closeMobileMenu"
+            ></div>
+        </Transition>
+
+        <!-- Mobile Menu Panel -->
         <Transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="-translate-y-2 opacity-0"
@@ -141,30 +162,46 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
         >
             <div
                 v-if="isMobileMenuOpen"
-                class="border-t bg-background lg:hidden"
+                class="relative z-50 border-t bg-background shadow-lg lg:hidden"
             >
-                <nav class="mx-auto max-w-7xl space-y-1 px-4 py-4">
+                <nav class="mx-auto max-w-7xl px-4 py-3">
                     <Link
                         href="/"
-                        class="block rounded-md px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                         @click="closeMobileMenu"
                     >
+                        <Home class="size-4 text-muted-foreground" />
                         Home
                     </Link>
                     <Link
                         href="/shop"
-                        class="block rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         @click="closeMobileMenu"
                     >
+                        <Store class="size-4" />
                         Shop
                     </Link>
-                    <div class="my-3 border-t"></div>
-                    <div class="flex gap-2 px-4">
+                    <Link
+                        href="/login"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        @click="closeMobileMenu"
+                    >
+                        <User class="size-4" />
+                        My Account
+                    </Link>
+
+                    <div class="my-2 border-t"></div>
+
+                    <div class="flex gap-2">
                         <Link href="/login" class="flex-1" @click="closeMobileMenu">
-                            <Button variant="outline" class="w-full"> Login </Button>
+                            <Button variant="outline" size="sm" class="w-full">
+                                Login
+                            </Button>
                         </Link>
                         <Link href="/register" class="flex-1" @click="closeMobileMenu">
-                            <Button class="w-full"> Register </Button>
+                            <Button size="sm" class="w-full">
+                                Register
+                            </Button>
                         </Link>
                     </div>
                 </nav>

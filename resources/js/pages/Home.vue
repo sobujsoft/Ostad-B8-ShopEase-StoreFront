@@ -61,56 +61,56 @@ const bestSellers = [
         slug: 'wireless-bluetooth-headphones-pro',
         price: 129.99,
         discountPrice: 89.99,
-        gradient: 'from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40',
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
     },
     {
         name: 'Premium Cotton T-Shirt',
         slug: 'premium-cotton-tshirt',
         price: 49.99,
         discountPrice: 34.99,
-        gradient: 'from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40',
+        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80',
     },
     {
         name: 'Smart Watch Series X',
         slug: 'smart-watch-series-x',
         price: 299.99,
         discountPrice: null,
-        gradient: 'from-slate-100 to-gray-100 dark:from-slate-900/40 dark:to-gray-900/40',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
     },
     {
         name: 'Organic Green Tea Collection',
         slug: 'organic-green-tea-collection',
         price: 24.99,
         discountPrice: 19.99,
-        gradient: 'from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40',
+        image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&q=80',
     },
     {
         name: 'Running Shoes Ultra Comfort',
         slug: 'running-shoes-ultra-comfort',
         price: 159.99,
         discountPrice: 119.99,
-        gradient: 'from-orange-100 to-amber-100 dark:from-orange-900/40 dark:to-amber-900/40',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
     },
     {
         name: 'Leather Crossbody Bag',
         slug: 'leather-crossbody-bag',
         price: 89.99,
         discountPrice: null,
-        gradient: 'from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40',
+        image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80',
     },
     {
         name: 'Stainless Steel Water Bottle',
         slug: 'stainless-steel-water-bottle',
         price: 34.99,
         discountPrice: 24.99,
-        gradient: 'from-cyan-100 to-sky-100 dark:from-cyan-900/40 dark:to-sky-900/40',
+        image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80',
     },
     {
         name: 'Portable Bluetooth Speaker',
         slug: 'portable-bluetooth-speaker',
         price: 79.99,
         discountPrice: 59.99,
-        gradient: 'from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40',
+        image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80',
     },
 ];
 
@@ -120,50 +120,49 @@ const newArrivals = [
         slug: 'minimalist-desk-lamp-led',
         price: 69.99,
         discountPrice: null,
-        gradient: 'from-yellow-100 to-orange-100 dark:from-yellow-900/40 dark:to-orange-900/40',
+        image: 'https://images.unsplash.com/photo-1507473885765-e6ed057ab6fe?w=400&q=80',
     },
     {
         name: 'Silk Scarf Floral Print',
         slug: 'silk-scarf-floral-print',
         price: 59.99,
         discountPrice: 44.99,
-        gradient: 'from-pink-100 to-rose-100 dark:from-pink-900/40 dark:to-rose-900/40',
+        image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&q=80',
     },
     {
         name: 'Ceramic Plant Pot Set',
         slug: 'ceramic-plant-pot-set',
         price: 45.99,
         discountPrice: null,
-        gradient: 'from-teal-100 to-green-100 dark:from-teal-900/40 dark:to-green-900/40',
+        image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&q=80',
     },
     {
         name: 'Noise Cancelling Earbuds',
         slug: 'noise-cancelling-earbuds',
         price: 199.99,
         discountPrice: 149.99,
-        gradient: 'from-gray-100 to-slate-100 dark:from-gray-900/40 dark:to-slate-900/40',
+        image: 'https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400&q=80',
     },
     {
         name: 'Yoga Mat Premium Non-Slip',
         slug: 'yoga-mat-premium-non-slip',
         price: 39.99,
         discountPrice: 29.99,
-        stockStatus: 'in_stock' as const,
-        gradient: 'from-purple-100 to-indigo-100 dark:from-purple-900/40 dark:to-indigo-900/40',
+        image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&q=80',
     },
     {
         name: 'Bamboo Cutting Board Set',
         slug: 'bamboo-cutting-board-set',
         price: 54.99,
         discountPrice: null,
-        gradient: 'from-lime-100 to-green-100 dark:from-lime-900/40 dark:to-green-900/40',
+        image: 'https://images.unsplash.com/photo-1588165171080-c89acfa5ee83?w=400&q=80',
     },
     {
         name: 'Vintage Canvas Backpack',
         slug: 'vintage-canvas-backpack',
         price: 79.99,
         discountPrice: 64.99,
-        gradient: 'from-stone-100 to-amber-100 dark:from-stone-900/40 dark:to-amber-900/40',
+        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80',
     },
     {
         name: 'Aroma Diffuser & Essential Oil Set',
@@ -171,7 +170,7 @@ const newArrivals = [
         price: 49.99,
         discountPrice: null,
         stockStatus: 'out_of_stock' as const,
-        gradient: 'from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40',
+        image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?w=400&q=80',
     },
 ];
 </script>
@@ -202,20 +201,20 @@ const newArrivals = [
     </div>
 
     <!-- Promo Banner -->
-    <section class="py-12 lg:py-16">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section class="px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <div class="mx-auto max-w-7xl">
             <div
-                class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-8 py-12 text-center sm:px-16 sm:py-16"
+                class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 py-8 text-center sm:rounded-2xl sm:px-16 sm:py-16"
             >
                 <div class="absolute inset-0 opacity-10" aria-hidden="true">
                     <div class="absolute -top-20 -left-20 size-60 rounded-full bg-white blur-3xl"></div>
                     <div class="absolute -right-20 -bottom-20 size-80 rounded-full bg-white blur-3xl"></div>
                 </div>
                 <div class="relative">
-                    <h2 class="text-2xl font-bold text-primary-foreground sm:text-3xl">
+                    <h2 class="text-lg font-bold text-primary-foreground sm:text-2xl lg:text-3xl">
                         Free Shipping on Orders Over $50
                     </h2>
-                    <p class="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/80 sm:text-base">
+                    <p class="mx-auto mt-2 max-w-xl text-xs text-primary-foreground/80 sm:mt-3 sm:text-sm lg:text-base">
                         Enjoy free standard shipping on all orders over $50.
                         No coupon needed — it's automatically applied at checkout.
                     </p>

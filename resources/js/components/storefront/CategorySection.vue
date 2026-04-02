@@ -35,24 +35,23 @@ function scroll(direction: 'left' | 'right') {
 </script>
 
 <template>
-    <section class="py-14 lg:py-20">
+    <section class="py-8 sm:py-14 lg:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
-            <div class="mb-10 flex items-end justify-between">
+            <div class="mb-5 flex items-end justify-between sm:mb-10">
                 <div>
                     <span
-                        class="mb-2 inline-block text-sm font-semibold tracking-wide text-primary uppercase"
+                        class="mb-1 inline-block text-xs font-semibold tracking-wide text-primary uppercase sm:mb-2 sm:text-sm"
                     >
                         Categories
                     </span>
                     <h2
-                        class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                        class="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl"
                     >
                         Shop by Category
                     </h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    <!-- Scroll arrows (visible on tablet and up, hidden on lg where grid takes over) -->
                     <div class="hidden gap-2 sm:flex lg:hidden">
                         <Button
                             variant="outline"
@@ -90,7 +89,7 @@ function scroll(direction: 'left' | 'right') {
             <!-- Mobile + Tablet: Horizontal scroll -->
             <div
                 ref="scrollContainer"
-                class="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide lg:hidden"
+                class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide sm:gap-4 lg:hidden"
                 style="
                     scroll-snap-type: x mandatory;
                     -webkit-overflow-scrolling: touch;
@@ -116,7 +115,7 @@ function scroll(direction: 'left' | 'right') {
             </div>
 
             <!-- Mobile View All -->
-            <div class="mt-6 text-center sm:hidden">
+            <div class="mt-4 text-center sm:hidden">
                 <Link
                     href="/shop"
                     class="inline-flex items-center gap-1 text-sm font-medium text-primary"

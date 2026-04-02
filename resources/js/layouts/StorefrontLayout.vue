@@ -6,7 +6,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.vue';
 <template>
     <div class="flex min-h-screen flex-col">
         <StorefrontHeader />
-        <main class="flex-1 pt-16 lg:pt-18">
+        <main class="flex-1 pt-14 sm:pt-16 lg:pt-18">
             <slot />
         </main>
         <StorefrontFooter />
