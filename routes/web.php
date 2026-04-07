@@ -9,6 +9,8 @@ Route::inertia('/shop', 'Shop')->name('shop');
 
 Route::inertia('/products/{slug}', 'ProductDetail')->name('products.show');
 
+Route::inertia('/checkout', 'Checkout')->name('checkout');
+
 Route::inertia('/welcome', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('welcome');
