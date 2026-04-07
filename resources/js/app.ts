@@ -7,7 +7,7 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'ShopEase';
 
-const storefrontPages = ['Home'];
+const storefrontPages = ['Home', 'Shop'];
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from 'lucide-vue-next';
-import ProductCard from './ProductCard.vue';
+import ProductCard from '../common/ProductCard.vue';
 
 interface Product {
     name: string;

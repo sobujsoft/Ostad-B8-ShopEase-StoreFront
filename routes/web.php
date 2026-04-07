@@ -5,6 +5,8 @@ use Laravel\Fortify\Features;
 
 Route::inertia('/', 'Home')->name('home');
 
+Route::inertia('/shop', 'Shop')->name('shop');
+
 Route::inertia('/welcome', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('welcome');
