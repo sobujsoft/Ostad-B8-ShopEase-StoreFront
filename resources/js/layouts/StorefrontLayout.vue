@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.vue';
-import StorefrontFooter from '@/components/storefront/StorefrontFooter.vue';
+import StorefrontHeader from '@/components/storefront/common/StorefrontHeader.vue';
+import StorefrontFooter from '@/components/storefront/common/StorefrontFooter.vue';
 </script>
 
 <template>

@@ -2,7 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { useIntersectionObserver, watchDebounced } from '@vueuse/core';
 import { computed, ref, useTemplateRef, watch } from 'vue';
-import ProductCard from '@/components/storefront/ProductCard.vue';
+import ProductCard from '@/components/storefront/common/ProductCard.vue';
 import ShopActiveFilterChips from '@/components/storefront/shop/ShopActiveFilterChips.vue';
 import type { ActiveChip } from '@/components/storefront/shop/ShopActiveFilterChips.vue';
 import ShopCategoryFilterPanel from '@/components/storefront/shop/ShopCategoryFilterPanel.vue';

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import HeroBanner from '@/components/storefront/HeroBanner.vue';
-import CategorySection from '@/components/storefront/CategorySection.vue';
-import ProductSection from '@/components/storefront/ProductSection.vue';
+import HeroBanner from '@/components/storefront/home/HeroBanner.vue';
+import CategorySection from '@/components/storefront/home/CategorySection.vue';
+import ProductSection from '@/components/storefront/home/ProductSection.vue';
 
 const categories = [
     {
