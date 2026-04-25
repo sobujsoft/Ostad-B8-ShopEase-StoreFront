@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Eye, ImageOff } from 'lucide-vue-next';
+import { ShoppingCart, Eye, ImageOff, Check } from 'lucide-vue-next';
+import { Spinner } from '@/components/ui/spinner';
+import { useCart } from '@/composables/useCart';
 
 interface Props {
+    productId: number;
     name: string;
     slug: string;
     price: number;
@@ -17,6 +20,21 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     stockStatus: 'in_stock',
 });
+
+const { addToCart } = useCart();
+const adding = ref(false);
+const justAdded = ref(false);
+
+async function handleAddToCart() {
+    if (adding.value || isOutOfStock.value) return;
+    adding.value = true;
+    const ok = await addToCart(props.productId, 1);
+    adding.value = false;
+    if (ok) {
+        justAdded.value = true;
+        setTimeout(() => { justAdded.value = false; }, 1500);
+    }
+}
 
 const discountPercentage = computed(() => {
     if (props.discountPrice && props.discountPrice < props.price) {
@@ -118,14 +136,17 @@ function formatPrice(amount: number): string {
             <Button
                 class="mt-auto w-full"
                 size="sm"
-                :disabled="isOutOfStock"
+                :disabled="isOutOfStock || adding"
+                @click="handleAddToCart"
             >
-                <ShoppingCart class="size-4" />
+                <Spinner v-if="adding" class="size-4" />
+                <Check v-else-if="justAdded" class="size-4" />
+                <ShoppingCart v-else class="size-4" />
                 <span class="hidden sm:inline">
-                    {{ isOutOfStock ? 'Out of Stock' : 'Add to Cart' }}
+                    {{ isOutOfStock ? 'Out of Stock' : justAdded ? 'Added!' : 'Add to Cart' }}
                 </span>
                 <span class="sm:hidden">
-                    {{ isOutOfStock ? 'Unavailable' : 'Add' }}
+                    {{ isOutOfStock ? 'Unavailable' : justAdded ? 'Added!' : 'Add' }}
                 </span>
             </Button>
         </div>

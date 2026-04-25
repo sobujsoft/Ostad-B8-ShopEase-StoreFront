@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Grid2x2 } from 'lucide-vue-next';
+import { storageUrl } from '@/lib/axios';
 
 interface Props {
     name: string;
@@ -20,7 +21,7 @@ defineProps<Props>();
         <!-- Background Image -->
         <img
             v-if="image"
-            :src="image"
+            :src="storageUrl(image)"
             :alt="name"
             class="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110"
         />

@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ImageOff, ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-vue-next';
-import type { ProductImage } from '@/data/storefront/product-detail-dummy';
+
+export interface GalleryImage {
+    id: string | number;
+    src: string;
+    alt: string;
+}
 
 const props = defineProps<{
-    images: ProductImage[];
+    images: GalleryImage[];
 }>();
 
 const activeIndex = ref(0);

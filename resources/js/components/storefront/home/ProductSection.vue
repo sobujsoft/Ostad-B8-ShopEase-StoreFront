@@ -1,30 +1,97 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from 'lucide-vue-next';
 import ProductCard from '../common/ProductCard.vue';
+import api from '@/lib/axios';
+import { storageUrl } from '@/lib/axios';
 
-interface Product {
+interface ProductImage {
+    id: number;
+    image_path: string;
+    sort_order: number;
+    is_primary: boolean;
+}
+
+interface ApiProduct {
+    id: number;
+    name: string;
+    slug: string;
+    price: string;
+    discount_price: string | null;
+    stock_status: 'in_stock' | 'out_of_stock';
+    images: ProductImage[];
+}
+
+interface SectionProduct {
+    id: number;
+    product: ApiProduct;
+}
+
+interface SectionData {
+    section_name: string;
+    products: SectionProduct[];
+}
+
+interface MappedProduct {
+    productId: number;
     name: string;
     slug: string;
     price: number;
-    discountPrice?: number | null;
-    image?: string | null;
-    stockStatus?: 'in_stock' | 'out_of_stock';
+    discountPrice: number | null;
+    image: string | null;
+    stockStatus: 'in_stock' | 'out_of_stock';
 }
 
 const props = defineProps<{
+    sectionName: string;
     title: string;
     subtitle?: string;
-    products: Product[];
     viewAllHref?: string;
 }>();
 
-const mobileProducts = computed(() => props.products.slice(0, 4));
+const products = ref<MappedProduct[]>([]);
+const isLoading = ref(true);
+
+function getPrimaryImage(images: ProductImage[]): string | null {
+    const primary = images.find(img => img.is_primary);
+    const img = primary ?? images[0];
+    return img ? storageUrl(img.image_path) : null;
+}
+
+function mapProducts(sectionProducts: SectionProduct[]): MappedProduct[] {
+    return sectionProducts.map(sp => ({
+        productId: sp.product.id,
+        name: sp.product.name,
+        slug: sp.product.slug,
+        price: parseFloat(sp.product.price),
+        discountPrice: sp.product.discount_price ? parseFloat(sp.product.discount_price) : null,
+        image: getPrimaryImage(sp.product.images),
+        stockStatus: sp.product.stock_status,
+    }));
+}
+
+async function fetchSection() {
+    try {
+        const { data } = await api.get<{ data: SectionData[] }>('/storefront/sections');
+        const section = data.data.find(s => s.section_name === props.sectionName);
+        if (section) {
+            products.value = mapProducts(section.products);
+        }
+    } catch {
+        products.value = [];
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+onMounted(fetchSection);
+
+const mobileProducts = computed(() => products.value.slice(0, 4));
 </script>
 
 <template>
-    <section class="py-8 sm:py-12 lg:py-16">
+    <section v-if="!isLoading && products.length > 0" class="py-8 sm:py-12 lg:py-16">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="mb-5 flex items-end justify-between sm:mb-8">
