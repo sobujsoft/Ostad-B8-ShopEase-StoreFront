@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ProductCard from '@/components/storefront/common/ProductCard.vue';
-import type { RelatedProduct } from '@/data/storefront/product-detail-dummy';
+
+export interface RelatedProduct {
+    productId: number;
+    name: string;
+    slug: string;
+    price: number;
+    discountPrice?: number | null;
+    image?: string | null;
+    stockStatus?: 'in_stock' | 'out_of_stock';
+}
 
 const props = defineProps<{
     products: RelatedProduct[];

@@ -4,15 +4,16 @@ import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Minus, Trash2, ImageOff } from 'lucide-vue-next';
-import type { CartItem } from '@/data/storefront/checkout-dummy';
+import type { CartItem } from '@/composables/useCart';
 
 const props = defineProps<{
     items: CartItem[];
+    isUpdating?: boolean;
 }>();
 
 const emit = defineEmits<{
-    updateQty: [id: string, qty: number];
-    remove: [id: string];
+    updateQty: [id: number, qty: number];
+    remove: [id: number];
 }>();
 
 function unitPrice(item: CartItem): number {
@@ -52,6 +53,7 @@ function formatPrice(amount: number): string {
                 v-for="item in items"
                 :key="item.id"
                 class="flex gap-3 rounded-lg border bg-card p-3"
+                :class="{ 'opacity-60': isUpdating }"
             >
                 <!-- Image -->
                 <Link
@@ -78,8 +80,8 @@ function formatPrice(amount: number): string {
                         >
                             {{ item.name }}
                         </Link>
-                        <p v-if="item.variant" class="mt-0.5 text-xs text-muted-foreground">
-                            {{ item.variant }}
+                        <p class="mt-0.5 text-xs text-muted-foreground">
+                            {{ item.code }}
                         </p>
                     </div>
 
@@ -88,7 +90,7 @@ function formatPrice(amount: number): string {
                         <div class="flex items-center gap-1">
                             <button
                                 class="flex size-7 items-center justify-center rounded-md border bg-background text-foreground transition-colors hover:bg-accent disabled:opacity-40"
-                                :disabled="item.quantity <= 1"
+                                :disabled="item.quantity <= 1 || isUpdating"
                                 @click="emit('updateQty', item.id, item.quantity - 1)"
                                 aria-label="Decrease quantity"
                             >
@@ -101,7 +103,7 @@ function formatPrice(amount: number): string {
                             </span>
                             <button
                                 class="flex size-7 items-center justify-center rounded-md border bg-background text-foreground transition-colors hover:bg-accent disabled:opacity-40"
-                                :disabled="item.quantity >= 10"
+                                :disabled="item.quantity >= 10 || isUpdating"
                                 @click="emit('updateQty', item.id, item.quantity + 1)"
                                 aria-label="Increase quantity"
                             >
@@ -115,7 +117,8 @@ function formatPrice(amount: number): string {
                                 {{ formatPrice(unitPrice(item) * item.quantity) }}
                             </span>
                             <button
-                                class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                                :disabled="isUpdating"
                                 @click="emit('remove', item.id)"
                                 aria-label="Remove item"
                             >

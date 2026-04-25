@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,62 +9,44 @@ import {
     Truck,
     ShieldCheck,
     Users,
+    LoaderCircle,
 } from 'lucide-vue-next';
+import api, { storageUrl } from '@/lib/axios';
 
-interface Slide {
-    tag: string;
-    headline: string;
-    highlightedText: string;
-    description: string;
-    ctaText: string;
-    ctaHref: string;
-    bgGradient: string;
-    overlayAccent: string;
+interface HeroBannerData {
+    id: number;
+    banner_img: string;
+    badge_txt: string | null;
+    title: string;
+    subtitle: string | null;
+    button_txt: string | null;
+    button_url: string | null;
+    is_active: boolean;
+    sort_order: number;
 }
 
-const slides: Slide[] = [
-    {
-        tag: 'New Collection 2026',
-        headline: 'Discover Your',
-        highlightedText: 'Perfect Style',
-        description:
-            'Explore our curated collection of premium products. Quality you can trust, prices you\'ll love.',
-        ctaText: 'Shop Now',
-        ctaHref: '/shop',
-        bgGradient:
-            'bg-[url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80")] bg-cover bg-center',
-        overlayAccent: 'from-orange-600/20 via-transparent to-transparent',
-    },
-    {
-        tag: 'Up to 40% Off',
-        headline: 'Summer Sale',
-        highlightedText: 'Starts Now',
-        description:
-            'Unbeatable deals on top brands. Limited time only — grab your favorites before they\'re gone.',
-        ctaText: 'View Deals',
-        ctaHref: '/shop?section=best_sellers',
-        bgGradient:
-            'bg-[url("https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&q=80")] bg-cover bg-center',
-        overlayAccent: 'from-amber-600/20 via-transparent to-transparent',
-    },
-    {
-        tag: 'Just Arrived',
-        headline: 'Fresh Finds,',
-        highlightedText: 'Daily Deals',
-        description:
-            'Be the first to shop our latest arrivals. New products added every week just for you.',
-        ctaText: 'Explore New',
-        ctaHref: '/shop?section=new_arrivals',
-        bgGradient:
-            'bg-[url("https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&q=80")] bg-cover bg-center',
-        overlayAccent: 'from-rose-600/20 via-transparent to-transparent',
-    },
-];
+const banners = ref<HeroBannerData[]>([]);
+const isLoading = ref(true);
+const hasError = ref(false);
 
 const currentSlide = ref(0);
 const isTransitioning = ref(false);
 let autoplayTimer: ReturnType<typeof setInterval> | null = null;
 let touchStartX = 0;
+
+const slideCount = computed(() => banners.value.length);
+const currentBanner = computed(() => banners.value[currentSlide.value]);
+
+async function fetchBanners() {
+    try {
+        const { data } = await api.get<{ data: HeroBannerData[] }>('/storefront/hero-banners');
+        banners.value = data.data;
+    } catch {
+        hasError.value = true;
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 function goToSlide(index: number) {
     if (isTransitioning.value || index === currentSlide.value) return;
@@ -75,16 +57,24 @@ function goToSlide(index: number) {
 }
 
 function nextSlide() {
-    goToSlide((currentSlide.value + 1) % slides.length);
+    if (slideCount.value < 2) return;
+    goToSlide((currentSlide.value + 1) % slideCount.value);
 }
 
 function prevSlide() {
-    goToSlide((currentSlide.value - 1 + slides.length) % slides.length);
+    if (slideCount.value < 2) return;
+    goToSlide((currentSlide.value - 1 + slideCount.value) % slideCount.value);
+}
+
+function startAutoplay() {
+    if (autoplayTimer) clearInterval(autoplayTimer);
+    if (slideCount.value > 1) {
+        autoplayTimer = setInterval(nextSlide, 6000);
+    }
 }
 
 function resetAutoplay() {
-    if (autoplayTimer) clearInterval(autoplayTimer);
-    autoplayTimer = setInterval(nextSlide, 6000);
+    startAutoplay();
 }
 
 function onTouchStart(e: TouchEvent) {
@@ -98,8 +88,9 @@ function onTouchEnd(e: TouchEvent) {
     }
 }
 
-onMounted(() => {
-    autoplayTimer = setInterval(nextSlide, 6000);
+onMounted(async () => {
+    await fetchBanners();
+    startAutoplay();
 });
 
 onUnmounted(() => {
@@ -108,15 +99,45 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <!-- Loading State -->
     <section
+        v-if="isLoading"
+        class="flex min-h-[360px] items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 sm:min-h-[420px] md:min-h-[480px] lg:min-h-[520px]"
+    >
+        <LoaderCircle class="size-10 animate-spin text-orange-400" />
+    </section>
+
+    <!-- Error / Empty State -->
+    <section
+        v-else-if="hasError || banners.length === 0"
+        class="flex min-h-[360px] items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 sm:min-h-[420px] md:min-h-[480px] lg:min-h-[520px]"
+    >
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white sm:text-3xl">Welcome to ShopEase</h2>
+            <p class="mt-2 text-white/60">Discover amazing products at great prices.</p>
+            <Link href="/shop" class="mt-6 inline-block">
+                <Button
+                    size="lg"
+                    class="h-11 rounded-full bg-orange-500 px-7 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600 sm:h-12 sm:px-8"
+                >
+                    Shop Now
+                    <ArrowRight class="size-4" />
+                </Button>
+            </Link>
+        </div>
+    </section>
+
+    <!-- Banner Carousel -->
+    <section
+        v-else
         class="relative overflow-hidden"
         @touchstart.passive="onTouchStart"
         @touchend.passive="onTouchEnd"
     >
         <!-- Slides -->
         <div
-            v-for="(slide, index) in slides"
-            :key="index"
+            v-for="(banner, index) in banners"
+            :key="banner.id"
             :class="[
                 'absolute inset-0 transition-all duration-700 ease-in-out',
                 index === currentSlide
@@ -124,13 +145,12 @@ onUnmounted(() => {
                     : 'z-0 scale-105 opacity-0',
             ]"
         >
-            <div :class="['absolute inset-0', slide.bgGradient]">
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
-            </div>
-            <div class="absolute inset-0 bg-black/50"></div>
             <div
-                :class="['absolute inset-0 bg-gradient-to-r', slide.overlayAccent]"
+                class="absolute inset-0 bg-cover bg-center"
+                :style="{ backgroundImage: `url(${storageUrl(banner.banner_img)})` }"
             ></div>
+            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent"></div>
         </div>
 
         <!-- Content -->
@@ -142,6 +162,7 @@ onUnmounted(() => {
                         <!-- Text Content: centered on mobile, left-aligned on lg -->
                         <div class="text-center lg:text-left">
                             <TransitionGroup
+                                v-if="currentBanner?.badge_txt"
                                 enter-active-class="transition-all duration-500 delay-100"
                                 enter-from-class="-translate-y-3 opacity-0"
                                 enter-to-class="translate-y-0 opacity-100"
@@ -154,7 +175,7 @@ onUnmounted(() => {
                                     class="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm sm:mb-5 sm:px-4 sm:py-1.5 sm:text-sm"
                                 >
                                     <span class="size-1.5 rounded-full bg-orange-400"></span>
-                                    {{ slides[currentSlide].tag }}
+                                    {{ currentBanner.badge_txt }}
                                 </div>
                             </TransitionGroup>
 
@@ -170,15 +191,12 @@ onUnmounted(() => {
                                     :key="'headline-' + currentSlide"
                                     class="text-[1.75rem] font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.5rem]"
                                 >
-                                    {{ slides[currentSlide].headline }}
-                                    <br />
-                                    <span class="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">
-                                        {{ slides[currentSlide].highlightedText }}
-                                    </span>
+                                    {{ currentBanner?.title }}
                                 </h1>
                             </TransitionGroup>
 
                             <TransitionGroup
+                                v-if="currentBanner?.subtitle"
                                 enter-active-class="transition-all duration-500 delay-300"
                                 enter-from-class="translate-y-4 opacity-0"
                                 enter-to-class="translate-y-0 opacity-100"
@@ -190,7 +208,7 @@ onUnmounted(() => {
                                     :key="'desc-' + currentSlide"
                                     class="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/70 sm:mt-5 sm:text-base lg:mx-0 lg:text-lg"
                                 >
-                                    {{ slides[currentSlide].description }}
+                                    {{ currentBanner.subtitle }}
                                 </p>
                             </TransitionGroup>
 
@@ -206,20 +224,19 @@ onUnmounted(() => {
                                     :key="'cta-' + currentSlide"
                                     class="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8 sm:gap-4 lg:justify-start"
                                 >
-                                    <Link :href="slides[currentSlide].ctaHref">
+                                    <Link v-if="currentBanner?.button_txt" :href="currentBanner.button_url ?? '/shop'">
                                         <Button
                                             size="lg"
                                             class="h-11 rounded-full bg-orange-500 px-7 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600 sm:h-12 sm:px-8"
                                         >
-                                            {{ slides[currentSlide].ctaText }}
+                                            {{ currentBanner.button_txt }}
                                             <ArrowRight class="size-4" />
                                         </Button>
                                     </Link>
                                     <Link href="/shop" class="hidden sm:inline-block">
                                         <Button
-                                            variant="outline"
                                             size="lg"
-                                            class="h-12 rounded-full border-white/20 px-8 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
+                                            class="h-12 rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20"
                                         >
                                             Browse All
                                         </Button>
@@ -277,43 +294,45 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <!-- Navigation Arrows (sm and up) -->
-        <button
-            class="absolute top-1/2 left-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/40 sm:flex sm:left-6 sm:size-12"
-            aria-label="Previous slide"
-            @click="prevSlide"
-        >
-            <ChevronLeft class="size-5" />
-        </button>
-        <button
-            class="absolute top-1/2 right-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/40 sm:flex sm:right-6 sm:size-12"
-            aria-label="Next slide"
-            @click="nextSlide"
-        >
-            <ChevronRight class="size-5" />
-        </button>
-
-        <!-- Slide Indicators -->
-        <div class="absolute bottom-12 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 sm:bottom-14 lg:bottom-8">
+        <!-- Navigation Arrows (sm and up, only when multiple slides) -->
+        <template v-if="slideCount > 1">
             <button
-                v-for="(_, index) in slides"
-                :key="index"
-                :class="[
-                    'h-2 rounded-full transition-all duration-500',
-                    index === currentSlide
-                        ? 'w-7 bg-orange-500 sm:w-8'
-                        : 'w-2 bg-white/40 hover:bg-white/60',
-                ]"
-                :aria-label="`Go to slide ${index + 1}`"
-                @click="goToSlide(index)"
-            />
-        </div>
+                class="absolute top-1/2 left-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/40 sm:flex sm:left-6 sm:size-12"
+                aria-label="Previous slide"
+                @click="prevSlide"
+            >
+                <ChevronLeft class="size-5" />
+            </button>
+            <button
+                class="absolute top-1/2 right-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/40 sm:flex sm:right-6 sm:size-12"
+                aria-label="Next slide"
+                @click="nextSlide"
+            >
+                <ChevronRight class="size-5" />
+            </button>
+
+            <!-- Slide Indicators -->
+            <div class="absolute bottom-12 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 sm:bottom-14 lg:bottom-8">
+                <button
+                    v-for="(_, index) in banners"
+                    :key="index"
+                    :class="[
+                        'h-2 rounded-full transition-all duration-500',
+                        index === currentSlide
+                            ? 'w-7 bg-orange-500 sm:w-8'
+                            : 'w-2 bg-white/40 hover:bg-white/60',
+                    ]"
+                    :aria-label="`Go to slide ${index + 1}`"
+                    @click="goToSlide(index)"
+                />
+            </div>
+        </template>
 
         <!-- Progress bar -->
-        <div class="absolute bottom-0 left-0 z-30 h-0.5 w-full bg-white/10">
+        <div v-if="slideCount > 1" class="absolute bottom-0 left-0 z-30 h-0.5 w-full bg-white/10">
             <div
                 class="h-full bg-orange-500 transition-all duration-300"
-                :style="{ width: `${((currentSlide + 1) / slides.length) * 100}%` }"
+                :style="{ width: `${((currentSlide + 1) / slideCount) * 100}%` }"
             ></div>
         </div>
     </section>

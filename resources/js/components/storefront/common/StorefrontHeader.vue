@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import {
     ShoppingCart,
@@ -10,10 +10,18 @@ import {
     Search,
     Home,
     Store,
+    LogOut,
+    Package,
 } from 'lucide-vue-next';
+import { useCustomerAuth } from '@/composables/useCustomerAuth';
+import { useCart } from '@/composables/useCart';
+
+const { isAuthenticated, user, logout } = useCustomerAuth();
+const { cartCount, ensureLoaded, resetCartState } = useCart();
 
 const isScrolled = ref(false);
 const isMobileMenuOpen = ref(false);
+const loggingOut = ref(false);
 
 function handleScroll() {
     isScrolled.value = window.scrollY > 20;
@@ -29,7 +37,19 @@ function closeMobileMenu() {
     document.body.style.overflow = '';
 }
 
-onMounted(() => window.addEventListener('scroll', handleScroll));
+async function handleLogout() {
+    loggingOut.value = true;
+    await logout();
+    resetCartState();
+    loggingOut.value = false;
+    closeMobileMenu();
+    router.visit('/');
+}
+
+onMounted(() => {
+    window.addEventListener('scroll', handleScroll);
+    ensureLoaded();
+});
 onUnmounted(() => window.removeEventListener('scroll', handleScroll));
 </script>
 
@@ -87,24 +107,56 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
                             <ShoppingCart class="size-5" />
                         </Button>
                         <span
+                            v-if="cartCount > 0"
                             class="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
                         >
-                            3
+                            {{ cartCount > 99 ? '99+' : cartCount }}
                         </span>
                     </Link>
                     <div
                         class="mx-2 h-6 w-px bg-border"
                         aria-hidden="true"
                     ></div>
-                    <Link href="/login">
-                        <Button variant="ghost" size="sm">
-                            <User class="size-4" />
-                            Login
+
+                    <!-- Authenticated state -->
+                    <template v-if="isAuthenticated">
+                        <Link href="/orders">
+                            <Button variant="ghost" size="sm">
+                                <Package class="size-4" />
+                                Orders
+                            </Button>
+                        </Link>
+                        <div class="flex items-center gap-2">
+                            <div class="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <User class="size-4" />
+                            </div>
+                            <span class="max-w-[120px] truncate text-sm font-medium text-foreground">
+                                {{ user?.name }}
+                            </span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            :disabled="loggingOut"
+                            @click="handleLogout"
+                        >
+                            <LogOut class="size-4" />
+                            Logout
                         </Button>
-                    </Link>
-                    <Link href="/register">
-                        <Button size="sm"> Register </Button>
-                    </Link>
+                    </template>
+
+                    <!-- Guest state -->
+                    <template v-else>
+                        <Link href="/customer/login">
+                            <Button variant="ghost" size="sm">
+                                <User class="size-4" />
+                                Login
+                            </Button>
+                        </Link>
+                        <Link href="/customer/register">
+                            <Button size="sm"> Register </Button>
+                        </Link>
+                    </template>
                 </div>
 
                 <!-- Mobile Actions -->
@@ -117,9 +169,10 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
                             <ShoppingCart class="size-5" />
                         </Button>
                         <span
+                            v-if="cartCount > 0"
                             class="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground"
                         >
-                            3
+                            {{ cartCount > 99 ? '99+' : cartCount }}
                         </span>
                     </Link>
                     <Button
@@ -181,29 +234,66 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll));
                         <Store class="size-4" />
                         Shop
                     </Link>
-                    <Link
-                        href="/login"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        @click="closeMobileMenu"
-                    >
-                        <User class="size-4" />
-                        My Account
-                    </Link>
 
-                    <div class="my-2 border-t"></div>
+                    <!-- Authenticated mobile menu -->
+                    <template v-if="isAuthenticated">
+                        <Link
+                            href="/orders"
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            @click="closeMobileMenu"
+                        >
+                            <Package class="size-4" />
+                            My Orders
+                        </Link>
 
-                    <div class="flex gap-2">
-                        <Link href="/login" class="flex-1" @click="closeMobileMenu">
-                            <Button variant="outline" size="sm" class="w-full">
-                                Login
-                            </Button>
+                        <div class="my-2 border-t"></div>
+
+                        <div class="flex items-center gap-3 px-3 py-2.5">
+                            <div class="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <User class="size-4" />
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium text-foreground">{{ user?.name }}</p>
+                                <p class="truncate text-xs text-muted-foreground">{{ user?.email }}</p>
+                            </div>
+                        </div>
+
+                        <button
+                            class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                            :disabled="loggingOut"
+                            @click="handleLogout"
+                        >
+                            <LogOut class="size-4" />
+                            {{ loggingOut ? 'Logging out...' : 'Logout' }}
+                        </button>
+                    </template>
+
+                    <!-- Guest mobile menu -->
+                    <template v-else>
+                        <Link
+                            href="/customer/login"
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            @click="closeMobileMenu"
+                        >
+                            <User class="size-4" />
+                            My Account
                         </Link>
-                        <Link href="/register" class="flex-1" @click="closeMobileMenu">
-                            <Button size="sm" class="w-full">
-                                Register
-                            </Button>
-                        </Link>
-                    </div>
+
+                        <div class="my-2 border-t"></div>
+
+                        <div class="flex gap-2">
+                            <Link href="/customer/login" class="flex-1" @click="closeMobileMenu">
+                                <Button variant="outline" size="sm" class="w-full">
+                                    Login
+                                </Button>
+                            </Link>
+                            <Link href="/customer/register" class="flex-1" @click="closeMobileMenu">
+                                <Button size="sm" class="w-full">
+                                    Register
+                                </Button>
+                            </Link>
+                        </div>
+                    </template>
                 </nav>
             </div>
         </Transition>

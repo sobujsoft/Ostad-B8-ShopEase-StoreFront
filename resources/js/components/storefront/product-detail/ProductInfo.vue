@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import {
     ShoppingCart,
     Zap,
@@ -20,27 +15,66 @@ import {
     Truck,
     RotateCcw,
     Shield,
+    Check,
 } from 'lucide-vue-next';
-import type { ProductVariant } from '@/data/storefront/product-detail-dummy';
+import { useCart } from '@/composables/useCart';
 
 const props = defineProps<{
+    productId: number;
     name: string;
     code: string;
     price: number;
     discountPrice?: number | null;
-    shortDescription: string;
+    shortDescription?: string | null;
     stockStatus: 'in_stock' | 'out_of_stock';
-    variants: ProductVariant[];
+    color?: string | null;
+    size?: string | null;
 }>();
 
+const { addToCart } = useCart();
 const quantity = ref(1);
-const selectedVariants = ref<Record<string, string>>({});
+const adding = ref(false);
+const justAdded = ref(false);
 
-for (const variant of props.variants) {
-    const firstAvailable = variant.options.find((o) => o.available !== false);
-    if (firstAvailable) {
-        selectedVariants.value[variant.name] = firstAvailable.value;
+async function handleAddToCart() {
+    if (adding.value || isOutOfStock.value) return;
+    adding.value = true;
+    const ok = await addToCart(props.productId, quantity.value);
+    adding.value = false;
+    if (ok) {
+        justAdded.value = true;
+        setTimeout(() => { justAdded.value = false; }, 2000);
     }
+}
+
+async function handleBuyNow() {
+    if (adding.value || isOutOfStock.value) return;
+    adding.value = true;
+    const ok = await addToCart(props.productId, quantity.value);
+    adding.value = false;
+    if (ok) {
+        router.visit('/checkout');
+    }
+}
+
+const colorOptions = computed(() => {
+    if (!props.color) return [];
+    return props.color.split(',').map(c => c.trim()).filter(Boolean);
+});
+
+const sizeOptions = computed(() => {
+    if (!props.size) return [];
+    return props.size.split(',').map(s => s.trim()).filter(Boolean);
+});
+
+const selectedColor = ref('');
+const selectedSize = ref('');
+
+if (colorOptions.value.length > 0) {
+    selectedColor.value = colorOptions.value[0]!;
+}
+if (sizeOptions.value.length > 0) {
+    selectedSize.value = sizeOptions.value[0]!;
 }
 
 const discountPercentage = computed(() => {
@@ -73,10 +107,6 @@ function incrementQty() {
 
 function decrementQty() {
     if (quantity.value > 1) quantity.value--;
-}
-
-function selectButtonVariant(variantName: string, optionValue: string) {
-    selectedVariants.value[variantName] = optionValue;
 }
 </script>
 
@@ -138,63 +168,50 @@ function selectButtonVariant(variantName: string, optionValue: string) {
 
         <Separator />
 
-        <!-- Variants -->
-        <div
-            v-for="variant in variants"
-            :key="variant.name"
-            class="space-y-2.5"
-        >
+        <!-- Color -->
+        <div v-if="colorOptions.length > 0" class="space-y-2.5">
             <label class="text-sm font-medium text-foreground">
-                {{ variant.name }}:
-                <span class="font-normal text-muted-foreground">
-                    {{
-                        variant.options.find(
-                            (o) => o.value === selectedVariants[variant.name],
-                        )?.label
-                    }}
-                </span>
+                Color:
+                <span class="font-normal text-muted-foreground">{{ selectedColor }}</span>
             </label>
-
-            <!-- Button-style variant (e.g., Size) -->
-            <div v-if="variant.type === 'button'" class="flex flex-wrap gap-2.5 sm:gap-2">
+            <div class="flex flex-wrap gap-2.5 sm:gap-2">
                 <button
-                    v-for="option in variant.options"
-                    :key="option.value"
+                    v-for="c in colorOptions"
+                    :key="c"
                     :class="[
-                        'flex items-center justify-center rounded-lg border px-4 text-sm font-medium transition-all h-10 min-w-[2.75rem] sm:h-9 sm:min-w-[2.5rem] sm:rounded-md sm:px-3',
-                        selectedVariants[variant.name] === option.value
+                        'flex items-center justify-center rounded-lg border px-4 text-sm font-medium transition-all h-10 sm:h-9 sm:rounded-md sm:px-3',
+                        selectedColor === c
                             ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                            : option.available !== false
-                              ? 'border-input bg-background text-foreground hover:border-primary/50'
-                              : 'cursor-not-allowed border-input bg-muted text-muted-foreground line-through opacity-50',
+                            : 'border-input bg-background text-foreground hover:border-primary/50',
                     ]"
-                    :disabled="option.available === false"
-                    @click="selectButtonVariant(variant.name, option.value)"
+                    @click="selectedColor = c"
                 >
-                    {{ option.label }}
+                    {{ c }}
                 </button>
             </div>
+        </div>
 
-            <!-- Dropdown-style variant (e.g., Color) -->
-            <Select
-                v-else
-                :model-value="selectedVariants[variant.name]"
-                @update:model-value="(v) => (selectedVariants[variant.name] = String(v))"
-            >
-                <SelectTrigger class="h-10 w-full sm:h-9 sm:w-56">
-                    <SelectValue :placeholder="`Select ${variant.name}`" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem
-                        v-for="option in variant.options"
-                        :key="option.value"
-                        :value="option.value"
-                        :disabled="option.available === false"
-                    >
-                        {{ option.label }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
+        <!-- Size -->
+        <div v-if="sizeOptions.length > 0" class="space-y-2.5">
+            <label class="text-sm font-medium text-foreground">
+                Size:
+                <span class="font-normal text-muted-foreground">{{ selectedSize }}</span>
+            </label>
+            <div class="flex flex-wrap gap-2.5 sm:gap-2">
+                <button
+                    v-for="s in sizeOptions"
+                    :key="s"
+                    :class="[
+                        'flex items-center justify-center rounded-lg border px-4 text-sm font-medium transition-all h-10 min-w-[2.75rem] sm:h-9 sm:min-w-[2.5rem] sm:rounded-md sm:px-3',
+                        selectedSize === s
+                            ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                            : 'border-input bg-background text-foreground hover:border-primary/50',
+                    ]"
+                    @click="selectedSize = s"
+                >
+                    {{ s }}
+                </button>
+            </div>
         </div>
 
         <!-- Quantity -->
@@ -234,16 +251,20 @@ function selectButtonVariant(variantName: string, optionValue: string) {
             <Button
                 size="lg"
                 class="h-11 flex-1 rounded-lg text-sm font-semibold sm:h-10 sm:rounded-md"
-                :disabled="isOutOfStock"
+                :disabled="isOutOfStock || adding"
+                @click="handleAddToCart"
             >
-                <ShoppingCart class="size-4 sm:size-5" />
-                {{ isOutOfStock ? 'Out of Stock' : 'Add to Cart' }}
+                <Spinner v-if="adding" class="size-4 sm:size-5" />
+                <Check v-else-if="justAdded" class="size-4 sm:size-5" />
+                <ShoppingCart v-else class="size-4 sm:size-5" />
+                {{ isOutOfStock ? 'Out of Stock' : justAdded ? 'Added to Cart!' : 'Add to Cart' }}
             </Button>
             <Button
                 variant="outline"
                 size="lg"
                 class="h-11 flex-1 rounded-lg text-sm font-semibold sm:h-10 sm:rounded-md"
-                :disabled="isOutOfStock"
+                :disabled="isOutOfStock || adding"
+                @click="handleBuyNow"
             >
                 <Zap class="size-4 sm:size-5" />
                 Buy Now

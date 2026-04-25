@@ -1,20 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import CategoryCard from './CategoryCard.vue';
+import api from '@/lib/axios';
 
-interface Category {
+interface CategoryData {
+    id: number;
     name: string;
     slug: string;
-    image?: string | null;
-    productCount?: number;
+    image: string | null;
+    description: string | null;
+    is_active: boolean;
+    sort_order: number;
+    products_count: number;
 }
 
-defineProps<{
-    categories: Category[];
-}>();
+const categories = ref<CategoryData[]>([]);
+const isLoading = ref(true);
+
+async function fetchCategories() {
+    try {
+        const { data } = await api.get<{ data: CategoryData[] }>('/storefront/categories');
+        categories.value = data.data;
+    } catch {
+        categories.value = [];
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+onMounted(fetchCategories);
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const canScrollLeft = ref(false);
@@ -35,7 +52,7 @@ function scroll(direction: 'left' | 'right') {
 </script>
 
 <template>
-    <section class="py-8 sm:py-14 lg:py-20">
+    <section v-if="!isLoading && categories.length > 0" class="py-8 sm:py-14 lg:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="mb-5 flex items-end justify-between sm:mb-10">
@@ -101,7 +118,12 @@ function scroll(direction: 'left' | 'right') {
                     :key="category.slug"
                     style="scroll-snap-align: start"
                 >
-                    <CategoryCard v-bind="category" />
+                    <CategoryCard
+                        :name="category.name"
+                        :slug="category.slug"
+                        :image="category.image"
+                        :product-count="category.products_count"
+                    />
                 </div>
             </div>
 
@@ -110,7 +132,10 @@ function scroll(direction: 'left' | 'right') {
                 <CategoryCard
                     v-for="category in categories"
                     :key="category.slug"
-                    v-bind="category"
+                    :name="category.name"
+                    :slug="category.slug"
+                    :image="category.image"
+                    :product-count="category.products_count"
                 />
             </div>
 

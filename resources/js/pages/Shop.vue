@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { useIntersectionObserver, watchDebounced } from '@vueuse/core';
-import { computed, ref, useTemplateRef, watch } from 'vue';
+import { watchDebounced } from '@vueuse/core';
+import { computed, onMounted, ref, watch } from 'vue';
 import ProductCard from '@/components/storefront/common/ProductCard.vue';
 import ShopActiveFilterChips from '@/components/storefront/shop/ShopActiveFilterChips.vue';
 import type { ActiveChip } from '@/components/storefront/shop/ShopActiveFilterChips.vue';
@@ -16,177 +16,203 @@ import {
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet';
-import {
-    shopCategories,
-    shopProducts,
-    categoryProductCounts,
-} from '@/data/storefront/shop-dummy-products';
+import api, { storageUrl } from '@/lib/axios';
+import { LoaderCircle } from 'lucide-vue-next';
+
+interface ProductImage {
+    id: number;
+    image_path: string;
+    sort_order: number;
+    is_primary: boolean;
+}
+
+interface ApiProduct {
+    id: number;
+    category_id: number;
+    name: string;
+    slug: string;
+    code: string;
+    price: string;
+    discount_price: string | null;
+    stock_status: 'in_stock' | 'out_of_stock';
+    is_active: boolean;
+    images: ProductImage[];
+}
+
+interface PaginationMeta {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
+interface ApiCategory {
+    id: number;
+    name: string;
+    slug: string;
+    image: string | null;
+    is_active: boolean;
+    sort_order: number;
+    products_count: number;
+}
 
 const page = usePage();
 
 const searchInput = ref('');
 const debouncedSearch = ref('');
-watchDebounced(
-    searchInput,
-    (v) => {
-        debouncedSearch.value = v;
-    },
-    { debounce: 300 },
-);
+watchDebounced(searchInput, (v) => { debouncedSearch.value = v; }, { debounce: 400 });
 
 const selectedCategorySlugs = ref<string[]>([]);
-const sectionFilter = ref<'best_sellers' | 'new_arrivals' | null>(null);
 const sortBy = ref<ShopSortValue>('newest');
-const displayedCount = ref(12);
 const filtersOpen = ref(false);
 
-const categoryRows = computed(() => {
-    const counts = categoryProductCounts(shopCategories, shopProducts);
-
-    return shopCategories.map((c) => ({
-        name: c.name,
-        slug: c.slug,
-        count: counts[c.slug] ?? 0,
-    }));
+const selectedCategoryId = computed(() => {
+    if (selectedCategorySlugs.value.length === 0) return null;
+    const slug = selectedCategorySlugs.value[selectedCategorySlugs.value.length - 1];
+    const cat = categories.value.find(c => c.slug === slug);
+    return cat?.id ?? null;
 });
+
+const products = ref<ApiProduct[]>([]);
+const paginationMeta = ref<PaginationMeta | null>(null);
+const isLoadingProducts = ref(true);
+const isLoadingMore = ref(false);
+
+const categories = ref<ApiCategory[]>([]);
+const isLoadingCategories = ref(true);
+
+const sortApiMap: Record<ShopSortValue, string> = {
+    newest: 'newest',
+    price_asc: 'price_asc',
+    price_desc: 'price_desc',
+    name_asc: 'newest',
+    name_desc: 'newest',
+};
+
+function getPrimaryImage(images: ProductImage[]): string | null {
+    const primary = images.find(img => img.is_primary);
+    const img = primary ?? images[0];
+    return img ? storageUrl(img.image_path) : null;
+}
+
+async function fetchCategories() {
+    try {
+        const { data } = await api.get<{ data: ApiCategory[] }>('/storefront/categories');
+        categories.value = data.data;
+    } catch {
+        categories.value = [];
+    } finally {
+        isLoadingCategories.value = false;
+    }
+}
+
+async function fetchProducts(pageNum = 1, append = false) {
+    if (append) {
+        isLoadingMore.value = true;
+    } else {
+        isLoadingProducts.value = true;
+    }
+
+    try {
+        const params: Record<string, string | number> = { page: pageNum };
+
+        if (debouncedSearch.value.trim()) {
+            params.search = debouncedSearch.value.trim();
+        }
+        if (selectedCategoryId.value) {
+            params.category_id = selectedCategoryId.value;
+        }
+        params.sort = sortApiMap[sortBy.value] ?? 'newest';
+
+        const { data } = await api.get<{ data: { data: ApiProduct[]; current_page: number; last_page: number; per_page: number; total: number } }>('/storefront/products', { params });
+
+        if (append) {
+            products.value = [...products.value, ...data.data.data];
+        } else {
+            products.value = data.data.data;
+        }
+
+        paginationMeta.value = {
+            current_page: data.data.current_page,
+            last_page: data.data.last_page,
+            per_page: data.data.per_page,
+            total: data.data.total,
+        };
+    } catch {
+        if (!append) {
+            products.value = [];
+            paginationMeta.value = null;
+        }
+    } finally {
+        isLoadingProducts.value = false;
+        isLoadingMore.value = false;
+    }
+}
 
 function parseUrl(url: string) {
     const q = url.includes('?') ? url.split('?')[1] ?? '' : '';
     const params = new URLSearchParams(q);
-    const cat = params.get('category');
-    const sec = params.get('section');
+    const catSlug = params.get('category');
 
-    if (cat) {
-        selectedCategorySlugs.value = shopCategories.some((c) => c.slug === cat)
-            ? [cat]
-            : [];
-    } else {
-        selectedCategorySlugs.value = [];
-    }
-
-    if (sec === 'best_sellers' || sec === 'new_arrivals') {
-        sectionFilter.value = sec;
-    } else {
-        sectionFilter.value = null;
+    if (catSlug && categories.value.some(c => c.slug === catSlug)) {
+        selectedCategorySlugs.value = [catSlug];
     }
 }
 
-watch(
-    () => page.url,
-    (url) => {
-        parseUrl(url);
-    },
-    { immediate: true },
+const categoryRows = computed(() =>
+    categories.value.map(c => ({
+        name: c.name,
+        slug: c.slug,
+        count: c.products_count,
+    })),
 );
 
-const filteredProducts = computed(() => {
-    let list = [...shopProducts];
-
-    if (sectionFilter.value === 'best_sellers') {
-        list = list.filter((p) => p.isBestSeller);
-    } else if (sectionFilter.value === 'new_arrivals') {
-        list = list.filter((p) => p.isNew);
-    }
-
-    if (selectedCategorySlugs.value.length > 0) {
-        const set = new Set(selectedCategorySlugs.value);
-        list = list.filter((p) => set.has(p.categorySlug));
-    }
-
-    const q = debouncedSearch.value.trim().toLowerCase();
-
-    if (q) {
-        list = list.filter(
-            (p) =>
-                p.name.toLowerCase().includes(q) ||
-                p.code.toLowerCase().includes(q),
-        );
-    }
-
-    return list;
+const hasMore = computed(() => {
+    if (!paginationMeta.value) return false;
+    return paginationMeta.value.current_page < paginationMeta.value.last_page;
 });
 
-function sortProducts(
-    list: typeof shopProducts,
-    sort: ShopSortValue,
-): typeof shopProducts {
-    const out = [...list];
-    const price = (p: (typeof shopProducts)[0]) =>
-        p.discountPrice != null && p.discountPrice < p.price
-            ? p.discountPrice
-            : p.price;
+const totalCount = computed(() => paginationMeta.value?.total ?? 0);
 
-    switch (sort) {
-        case 'name_asc':
-            out.sort((a, b) => a.name.localeCompare(b.name));
-            break;
-        case 'name_desc':
-            out.sort((a, b) => b.name.localeCompare(a.name));
-            break;
-        case 'price_asc':
-            out.sort((a, b) => price(a) - price(b));
-            break;
-        case 'price_desc':
-            out.sort((a, b) => price(b) - price(a));
-            break;
-        case 'newest':
-        default:
-            out.sort((a, b) => b.createdAt - a.createdAt);
-    }
-
-    return out;
+function loadMore() {
+    if (!hasMore.value || isLoadingMore.value || !paginationMeta.value) return;
+    fetchProducts(paginationMeta.value.current_page + 1, true);
 }
 
-const sortedFiltered = computed(() =>
-    sortProducts(filteredProducts.value, sortBy.value),
-);
+const loadMoreSentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
-watch([selectedCategorySlugs, debouncedSearch, sectionFilter, sortBy], () => {
-    displayedCount.value = 12;
-});
+function setupObserver() {
+    if (observer) observer.disconnect();
+    if (!loadMoreSentinel.value) return;
 
-const visibleProducts = computed(() =>
-    sortedFiltered.value.slice(0, displayedCount.value),
-);
+    observer = new IntersectionObserver(
+        ([entry]) => {
+            if (entry?.isIntersecting && hasMore.value) {
+                loadMore();
+            }
+        },
+        { rootMargin: '200px' },
+    );
+    observer.observe(loadMoreSentinel.value);
+}
 
-const hasMore = computed(
-    () => displayedCount.value < sortedFiltered.value.length,
-);
+watch(loadMoreSentinel, () => setupObserver());
 
-const loadMoreSentinel = useTemplateRef('loadMoreSentinel');
-
-useIntersectionObserver(
-    loadMoreSentinel,
-    ([entry]) => {
-        if (entry?.isIntersecting && hasMore.value) {
-            displayedCount.value = Math.min(
-                displayedCount.value + 12,
-                sortedFiltered.value.length,
-            );
-        }
-    },
-    { rootMargin: '120px' },
-);
+watch(debouncedSearch, () => fetchProducts(1, false));
+watch(sortBy, () => fetchProducts(1, false));
 
 const activeChips = computed((): ActiveChip[] => {
     const chips: ActiveChip[] = [];
 
-    if (sectionFilter.value === 'best_sellers') {
-        chips.push({ id: 'section:best_sellers', label: 'Best sellers' });
-    } else if (sectionFilter.value === 'new_arrivals') {
-        chips.push({ id: 'section:new_arrivals', label: 'New arrivals' });
-    }
-
     for (const slug of selectedCategorySlugs.value) {
-        const cat = shopCategories.find((c) => c.slug === slug);
-
+        const cat = categories.value.find(c => c.slug === slug);
         if (cat) {
             chips.push({ id: `category:${slug}`, label: cat.name });
         }
     }
 
     const q = debouncedSearch.value.trim();
-
     if (q) {
         chips.push({ id: 'search', label: `Search: ${q}` });
     }
@@ -195,31 +221,18 @@ const activeChips = computed((): ActiveChip[] => {
 });
 
 const hasFilterConstraints = computed(
-    () =>
-        debouncedSearch.value.trim() !== '' ||
-        selectedCategorySlugs.value.length > 0 ||
-        sectionFilter.value !== null,
+    () => debouncedSearch.value.trim() !== '' || selectedCategorySlugs.value.length > 0,
 );
 
 function removeChip(id: string) {
     if (id === 'search') {
         searchInput.value = '';
         debouncedSearch.value = '';
-
         return;
     }
-
-    if (id === 'section:best_sellers' || id === 'section:new_arrivals') {
-        sectionFilter.value = null;
-
-        return;
-    }
-
     if (id.startsWith('category:')) {
         const slug = id.slice('category:'.length);
-        selectedCategorySlugs.value = selectedCategorySlugs.value.filter(
-            (s) => s !== slug,
-        );
+        selectedCategorySlugs.value = selectedCategorySlugs.value.filter(s => s !== slug);
     }
 }
 
@@ -227,14 +240,24 @@ function clearAllFilters() {
     searchInput.value = '';
     debouncedSearch.value = '';
     selectedCategorySlugs.value = [];
-    sectionFilter.value = null;
     sortBy.value = 'newest';
     router.get('/shop', {}, { replace: true, preserveState: true, preserveScroll: true });
 }
 
-function categoryName(slug: string): string {
-    return shopCategories.find((c) => c.slug === slug)?.name ?? slug;
+function onCategoryChange(slugs: string[]) {
+    selectedCategorySlugs.value = slugs;
+    fetchProducts(1, false);
 }
+
+function categoryName(slug: string): string {
+    return categories.value.find(c => c.slug === slug)?.name ?? slug;
+}
+
+onMounted(async () => {
+    await fetchCategories();
+    parseUrl(page.url);
+    await fetchProducts();
+});
 </script>
 
 <template>
@@ -245,8 +268,9 @@ function categoryName(slug: string): string {
             <!-- Desktop filters -->
             <aside class="hidden w-full max-w-xs shrink-0 lg:block">
                 <ShopCategoryFilterPanel
-                    v-model="selectedCategorySlugs"
+                    :model-value="selectedCategorySlugs"
                     :categories="categoryRows"
+                    @update:model-value="onCategoryChange"
                 />
             </aside>
 
@@ -264,15 +288,11 @@ function categoryName(slug: string): string {
                     @clear-all="clearAllFilters"
                 />
 
-                <p class="text-xs text-muted-foreground sm:text-sm">
+                <p v-if="!isLoadingProducts" class="text-xs text-muted-foreground sm:text-sm">
                     Showing
-                    <span class="font-medium text-foreground">{{
-                        visibleProducts.length
-                    }}</span>
+                    <span class="font-medium text-foreground">{{ products.length }}</span>
                     of
-                    <span class="font-medium text-foreground">{{
-                        sortedFiltered.length
-                    }}</span>
+                    <span class="font-medium text-foreground">{{ totalCount }}</span>
                     products
                     <template v-if="selectedCategorySlugs.length === 1">
                         in
@@ -282,8 +302,16 @@ function categoryName(slug: string): string {
                     </template>
                 </p>
 
+                <!-- Loading state -->
+                <div
+                    v-if="isLoadingProducts"
+                    class="flex items-center justify-center py-20"
+                >
+                    <LoaderCircle class="size-8 animate-spin text-primary" />
+                </div>
+
                 <ShopEmptyState
-                    v-if="sortedFiltered.length === 0"
+                    v-else-if="products.length === 0"
                     :has-filters="hasFilterConstraints"
                     @clear-filters="clearAllFilters"
                 />
@@ -293,26 +321,30 @@ function categoryName(slug: string): string {
                     class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 xl:gap-6"
                 >
                     <ProductCard
-                        v-for="product in visibleProducts"
+                        v-for="product in products"
                         :key="product.slug"
+                        :product-id="product.id"
                         :name="product.name"
                         :slug="product.slug"
-                        :price="product.price"
-                        :discount-price="product.discountPrice"
-                        :image="product.image"
-                        :stock-status="product.stockStatus ?? 'in_stock'"
+                        :price="parseFloat(product.price)"
+                        :discount-price="product.discount_price ? parseFloat(product.discount_price) : null"
+                        :image="getPrimaryImage(product.images)"
+                        :stock-status="product.stock_status ?? 'in_stock'"
                     />
                 </div>
 
+                <!-- Load more sentinel -->
                 <div
-                    v-if="sortedFiltered.length > 0"
+                    v-if="products.length > 0"
                     ref="loadMoreSentinel"
                     class="flex min-h-8 justify-center py-4"
                     aria-hidden="true"
-                />
+                >
+                    <LoaderCircle v-if="isLoadingMore" class="size-6 animate-spin text-primary" />
+                </div>
 
                 <p
-                    v-if="sortedFiltered.length > 0 && !hasMore"
+                    v-if="products.length > 0 && !hasMore && !isLoadingProducts"
                     class="text-center text-xs text-muted-foreground"
                 >
                     You've reached the end of the list.
@@ -332,8 +364,9 @@ function categoryName(slug: string): string {
                 </SheetDescription>
             </SheetHeader>
             <ShopCategoryFilterPanel
-                v-model="selectedCategorySlugs"
+                :model-value="selectedCategorySlugs"
                 :categories="categoryRows"
+                @update:model-value="onCategoryChange"
             />
         </SheetContent>
     </Sheet>
