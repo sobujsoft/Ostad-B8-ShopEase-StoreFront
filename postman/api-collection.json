@@ -590,38 +590,70 @@
 		{
 			"name": "Checkout & Orders",
 			"item": [
-				{
-					"name": "Place Order (COD)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{customer_token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"customer_name\": \"John Doe\",\n    \"customer_email\": \"john@example.com\",\n    \"customer_phone\": \"01712345678\",\n    \"shipping_address\": \"House 12, Road 5, Dhanmondi, Dhaka\",\n    \"payment_method\": \"cod\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+			{
+				"name": "Place Order (COD)",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json"
 						},
-						"url": {
-							"raw": "{{base_url}}/storefront/checkout",
-							"host": ["{{base_url}}"],
-							"path": ["storefront", "checkout"]
-						},
-						"description": "Place an order using Cash on Delivery. Converts all cart items into an order with order items, logs order status, and clears the cart."
+						{
+							"key": "Authorization",
+							"value": "Bearer {{customer_token}}"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"customer_name\": \"John Doe\",\n    \"customer_email\": \"john@example.com\",\n    \"customer_phone\": \"01712345678\",\n    \"shipping_address\": \"House 12, Road 5, Dhanmondi, Dhaka\",\n    \"payment_method\": \"cod\"\n}",
+						"options": {
+							"raw": {
+								"language": "json"
+							}
+						}
 					},
-					"response": []
+					"url": {
+						"raw": "{{base_url}}/storefront/checkout",
+						"host": ["{{base_url}}"],
+						"path": ["storefront", "checkout"]
+					},
+					"description": "Place an order using Cash on Delivery. Converts all cart items into an order with order items, logs order status, and clears the cart."
 				},
+				"response": []
+			},
+			{
+				"name": "Place Order (SSLCommerz)",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json"
+						},
+						{
+							"key": "Authorization",
+							"value": "Bearer {{customer_token}}"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"customer_name\": \"John Doe\",\n    \"customer_email\": \"john@example.com\",\n    \"customer_phone\": \"01712345678\",\n    \"shipping_address\": \"House 12, Road 5, Dhanmondi, Dhaka\",\n    \"payment_method\": \"sslcommerz\"\n}",
+						"options": {
+							"raw": {
+								"language": "json"
+							}
+						}
+					},
+					"url": {
+						"raw": "{{base_url}}/storefront/checkout",
+						"host": ["{{base_url}}"],
+						"path": ["storefront", "checkout"]
+					},
+					"description": "Place an order via SSLCommerz payment gateway. Returns a payment_url — redirect the user to this URL to complete payment. On success/failure/cancel, SSLCommerz posts back to callback endpoints which redirect to the frontend."
+				},
+				"response": []
+			},
 				{
 					"name": "My Orders",
 					"request": {

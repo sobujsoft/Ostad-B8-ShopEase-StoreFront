@@ -108,6 +108,11 @@ async function handlePlaceOrder() {
 
         resetCartState();
 
+        if (paymentMethod.value === 'sslcommerz' && data.data?.payment_url) {
+            window.location.href = data.data.payment_url;
+            return;
+        }
+
         const orderNumber = data.data?.order?.order_number ?? data.data?.order_number ?? '';
         router.visit(`/order-success?order=${orderNumber}`);
     } catch (err: any) {
@@ -246,7 +251,10 @@ onMounted(() => {
                                 >
                                     <Spinner v-if="placingOrder" class="size-4" />
                                     <Lock v-else class="size-4" />
-                                    {{ placingOrder ? 'Placing Order...' : `Place Order — ${formatPrice(total)}` }}
+                                    {{ placingOrder
+                                        ? (paymentMethod === 'sslcommerz' ? 'Redirecting to Payment...' : 'Placing Order...')
+                                        : (paymentMethod === 'sslcommerz' ? `Pay Now — ${formatPrice(total)}` : `Place Order — ${formatPrice(total)}`)
+                                    }}
                                 </Button>
 
                                 <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
