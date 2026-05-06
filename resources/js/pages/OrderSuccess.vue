@@ -2,14 +2,18 @@
 import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { CircleCheck, Package, ShoppingBag, ArrowRight } from 'lucide-vue-next';
+import { CircleCheck, Package, ShoppingBag, ArrowRight, Banknote } from 'lucide-vue-next';
 
 const page = usePage();
 
-const orderNumber = computed(() => {
+const params = computed(() => {
     const url = page.url;
     const q = url.includes('?') ? url.split('?')[1] ?? '' : '';
-    return new URLSearchParams(q).get('order') || '';
+    const sp = new URLSearchParams(q);
+    return {
+        orderNumber: sp.get('order') || '',
+        paymentMethod: sp.get('payment') || 'cod',
+    };
 });
 </script>
 
@@ -35,19 +39,19 @@ const orderNumber = computed(() => {
 
             <!-- Order Number -->
             <div
-                v-if="orderNumber"
+                v-if="params.orderNumber"
                 class="rounded-lg border bg-muted/30 p-4"
             >
                 <p class="text-xs text-muted-foreground">Order Number</p>
                 <p class="mt-1 text-lg font-bold tracking-wide text-foreground">
-                    {{ orderNumber }}
+                    {{ params.orderNumber }}
                 </p>
             </div>
 
             <!-- Info -->
             <div class="space-y-3 rounded-lg border p-4 text-left">
                 <div class="flex items-start gap-3">
-                    <Package class="mt-0.5 size-5 shrink-0 text-primary" />
+                    <Banknote class="mt-0.5 size-5 shrink-0 text-primary" />
                     <div>
                         <p class="text-sm font-medium text-foreground">Cash on Delivery</p>
                         <p class="text-xs text-muted-foreground">
@@ -60,8 +64,8 @@ const orderNumber = computed(() => {
             <!-- Actions -->
             <div class="flex flex-col gap-3 sm:flex-row">
                 <Link
-                    v-if="orderNumber"
-                    :href="`/orders/${orderNumber}`"
+                    v-if="params.orderNumber"
+                    :href="`/orders/${params.orderNumber}`"
                     class="flex-1"
                 >
                     <Button variant="outline" class="w-full">

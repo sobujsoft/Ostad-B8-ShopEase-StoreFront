@@ -53,7 +53,8 @@ interface OrderItem {
 
 interface StatusLog {
     id: number;
-    status: string;
+    from_status: string | null;
+    to_status: string;
     note: string | null;
     created_at: string;
 }
@@ -64,13 +65,13 @@ interface Order {
     customer_name: string;
     customer_email: string;
     customer_phone: string;
-    shipping_address: string;
-    total_amount: string;
+    shipping_address: string | { address?: string };
+    total: string;
     payment_method: string;
     payment_status: string;
-    order_status: string;
+    status: string;
     created_at: string;
-    order_items: OrderItem[];
+    items: OrderItem[];
     status_logs?: StatusLog[];
 }
 
@@ -95,6 +96,12 @@ function getOrderNumber(): string {
     const url = page.url;
     const parts = url.split('?')[0]!.split('/').filter(Boolean);
     return parts[parts.length - 1] ?? '';
+}
+
+function displayAddress(addr: string | { address?: string } | null): string {
+    if (!addr) return 'N/A';
+    if (typeof addr === 'string') return addr;
+    return addr.address ?? 'N/A';
 }
 
 function getItemImage(item: OrderItem): string | null {
@@ -210,10 +217,10 @@ onMounted(() => {
                         </h1>
                         <Badge
                             variant="secondary"
-                            :class="statusClass(order.order_status)"
+                            :class="statusClass(order.status)"
                             class="capitalize"
                         >
-                            {{ order.order_status }}
+                            {{ order.status }}
                         </Badge>
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
@@ -234,11 +241,11 @@ onMounted(() => {
                     <!-- Order Items -->
                     <div class="rounded-xl border bg-card p-4 sm:p-5">
                         <h2 class="mb-4 text-base font-semibold text-foreground">
-                            Items ({{ order.order_items.length }})
+                            Items ({{ order.items.length }})
                         </h2>
                         <div class="space-y-3">
                             <div
-                                v-for="item in order.order_items"
+                                v-for="item in order.items"
                                 :key="item.id"
                                 class="flex gap-3 rounded-lg border p-3"
                             >
@@ -283,7 +290,7 @@ onMounted(() => {
                         <div class="flex justify-between">
                             <span class="text-base font-semibold text-foreground">Total</span>
                             <span class="text-lg font-bold text-foreground">
-                                {{ formatPrice(order.total_amount) }}
+                                {{ formatPrice(order.total) }}
                             </span>
                         </div>
                     </div>
@@ -315,7 +322,7 @@ onMounted(() => {
                                 ></div>
                                 <div class="min-w-0 pb-4">
                                     <p class="text-sm font-medium capitalize text-foreground">
-                                        {{ log.status }}
+                                        {{ log.to_status }}
                                     </p>
                                     <p v-if="log.note" class="mt-0.5 text-xs text-muted-foreground">
                                         {{ log.note }}
@@ -351,7 +358,7 @@ onMounted(() => {
                             </div>
                             <div class="flex items-start gap-2.5">
                                 <MapPin class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                <span class="text-foreground">{{ order.shipping_address }}</span>
+                                <span class="text-foreground">{{ displayAddress(order.shipping_address) }}</span>
                             </div>
                         </div>
                     </div>
@@ -382,7 +389,7 @@ onMounted(() => {
                             <div class="flex justify-between">
                                 <span class="font-semibold text-foreground">Total</span>
                                 <span class="font-bold text-foreground">
-                                    {{ formatPrice(order.total_amount) }}
+                                    {{ formatPrice(order.total) }}
                                 </span>
                             </div>
                         </div>

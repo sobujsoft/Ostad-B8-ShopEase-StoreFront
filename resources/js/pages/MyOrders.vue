@@ -21,13 +21,13 @@ interface ApiOrder {
     id: number;
     order_number: string;
     customer_name: string;
-    total_amount: string;
+    total: string;
     payment_method: string;
     payment_status: string;
-    order_status: string;
+    status: string;
     created_at: string;
     items_count?: number;
-    order_items?: any[];
+    items?: any[];
 }
 
 interface PaginationMeta {
@@ -196,16 +196,16 @@ onMounted(() => {
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                             <Badge
                                 variant="secondary"
-                                :class="statusClass(order.order_status)"
+                                :class="statusClass(order.status)"
                                 class="capitalize"
                             >
-                                {{ order.order_status }}
+                                {{ order.status }}
                             </Badge>
                             <Badge variant="outline" class="capitalize">
                                 {{ order.payment_method === 'cod' ? 'COD' : order.payment_method }}
                             </Badge>
                             <span class="text-sm font-bold text-foreground">
-                                {{ formatPrice(order.total_amount) }}
+                                {{ formatPrice(order.total) }}
                             </span>
                         </div>
 

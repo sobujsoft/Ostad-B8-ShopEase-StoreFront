@@ -15,6 +15,7 @@ Route::inertia('/customer/login', 'CustomerLogin')->name('customer.login');
 Route::inertia('/customer/register', 'CustomerRegister')->name('customer.register');
 
 Route::inertia('/order-success', 'OrderSuccess')->name('order.success');
+Route::inertia('/payment/result', 'PaymentResult')->name('payment.result');
 Route::inertia('/orders', 'MyOrders')->name('orders.index');
 Route::inertia('/orders/{orderNumber}', 'OrderDetail')->name('orders.show');
 
